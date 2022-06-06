@@ -6,6 +6,7 @@ import org.modelmapper.spi.MatchingStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.simple.users.service.UserService;
 import com.simple.users.shared.UserDto;
 import com.simple.users.ui.model.User;
+import com.simple.users.ui.model.UserModel;
 
 @RestController
 @RequestMapping("/users")
@@ -33,13 +35,18 @@ public class UsersController {
 		return "working on port " + env.getProperty("local.server.port");
 	}
 	
-	@PostMapping("/")
-	public ResponseEntity createUser(@RequestBody User user)
+	@PostMapping( consumes = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE},
+				  produces = {MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE}	)
+	public ResponseEntity<UserModel> createUser(@RequestBody User user)
 	{
 		ModelMapper modelMapper = new ModelMapper();
 		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+		
 		UserDto userDto = modelMapper.map(user, UserDto.class);
-		userService.CreateUser(userDto);
-		return new ResponseEntity(HttpStatus.CREATED);
+		UserDto usersDto = userService.CreateUser(userDto);
+		
+		UserModel userModel = modelMapper.map(usersDto, UserModel.class);
+		
+		return ResponseEntity.status(HttpStatus.CREATED).body(userModel);
 	}
 }
